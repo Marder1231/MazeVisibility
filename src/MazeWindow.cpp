@@ -85,6 +85,12 @@ draw(void)
 	// Clear the screen.
 	glClear(GL_COLOR_BUFFER_BIT);
 
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+
 	glBegin(GL_QUADS);
 		// Draw the "floor". It is an infinite plane perpendicular to
 		// vertical, so we know it projects to cover the entire bottom
@@ -111,17 +117,18 @@ draw(void)
 		// field of view and the size of the image in view space. Note
 		// the static member function of the Maze class for converting
 		// radians to degrees. There is also one defined for going backwards.
-		focal_length = w()
-						 / (float)(2.0*tan(Maze::To_Radians(maze->viewer_fov)*0.5));
-	
+		focal_length = w() / (float)(2.0*tan(Maze::To_Radians(maze->viewer_fov)*0.5));
+
+			
 		// Draw the 3D view of the maze (the visible walls.) You write this.
 		// Note that all the information that is required to do the
 		// transformations and projection is contained in the Maze class,
 		// plus the focal length.
+		/*
 		glClear(GL_DEPTH_BUFFER_BIT);
 
 		glMatrixMode(GL_PROJECTION);
-		glLoadIdentity();	
+		glLoadIdentity();
 
 		float aspect = (float)w() / h();
 		gluPerspective(maze->viewer_fov, aspect, 0.01, 200);
@@ -136,14 +143,15 @@ draw(void)
 			viewer_pos[Maze::Z] + cos(Maze::To_Radians(maze->viewer_dir)),
 			0.0, 1.0, 0.0);
 
+
 		maze->Draw_View(focal_length);
-	
 
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
 
 		glMatrixMode(GL_MODELVIEW);
-		glLoadIdentity();
+		glLoadIdentity();*/
+		maze->Draw_View(focal_length);
 	}
 }
 

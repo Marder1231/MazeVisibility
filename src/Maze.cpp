@@ -27,6 +27,7 @@
 #include <Fl/math.h>
 #include <Fl/gl.h>
 #include <GL/glu.h>
+#include "Matrix.h"
 
 const char Maze::X = 0;
 const char Maze::Y = 1;
@@ -565,6 +566,9 @@ Set_View_Dir(const float d)
 //======================================================================
 {
 	viewer_dir = d;
+
+	//test
+	//viewer_dir = -120;
 }
 
 
@@ -624,17 +628,71 @@ Draw_Map(int min_x, int min_y, int max_x, int max_y)
 }
 
 void Maze::Draw_Wall(const float start[2], const float end[2], const float color[3])
-{
-	float edge0[3] = { start[Y], 0.0f, start[X] };
-	float edge1[3] = { end[Y], 0.0f, end[X] };
-	glBegin(GL_POLYGON);
+{	
+	//float edge0[3] = { start[Y], 0.0f, start[X] };
+	//float edge1[3] = { end[Y], 0.0f, end[X] };
+	//glBegin(GL_POLYGON);
+	//glColor3fv(color);
+	//glVertex3f(edge0[X], 1.0f, edge0[Z]);
+	//glVertex3f(edge1[X], 1.0f, edge1[Z]);
+	//glVertex3f(edge1[X], -1.0f, edge1[Z]);
+	//glVertex3f(edge0[X], -1.0f, edge0[Z]);
+	//glEnd();
+
+	//   world   2  camera
+	Matrix4x4 invRMatrix = { sin(To_Radians(this->viewer_dir)), 0, -cos(To_Radians(this->viewer_dir)),  0,
+								   0, 1,		  0, 0,
+						  cos(To_Radians(this->viewer_dir)), 0, sin(To_Radians(this->viewer_dir)),  0,
+								   0, 0,		  0, 1 };
+	Matrix4x4 invTMatrix = { 1, 0, 0, -this->viewer_posn[Maze::X],
+						  0, 1, 0, 0,
+						  0, 0, 1, -this->viewer_posn[Maze::Y],
+						  0, 0, 0,					 1 };
+
+	//ref : https://www.scratchapixel.com/lessons/3d-basic-rendering/perspective-and-orthographic-projection-matrix/building-basic-perspective-projection-matrix
+	//不知道在公沙小
+	float n = 0.01;
+	float _s = tan(To_Radians(this->viewer_fov / 2.0));
+	float f = 100;
+	Matrix4x4 matrixP = { 1, 0, 0, 0,
+							  0, 1, 0, 0,
+							  0, 0, 1, 0,
+							  0, 0, 1/_s, 0 };
+
+	float vs0[4] = { start[1], 1, start[0], 1 };
+	//Matrix_Cal::Multiple(viewMatrix, vs0);	
+	Matrix_Cal::Multiple(invTMatrix, vs0);
+	Matrix_Cal::Multiple(invRMatrix, vs0);
+	Matrix_Cal::Multiple(matrixP, vs0);
+
+
+	float vs1[4] = { start[1], -1, start[0], 1 };
+	//Matrix_Cal::Multiple(viewMatrix, vs1);
+	Matrix_Cal::Multiple(invTMatrix, vs1);
+	Matrix_Cal::Multiple(invRMatrix, vs1);
+	Matrix_Cal::Multiple(matrixP, vs1);
+
+	float ve0[4] = { end[1], -1, end[0], 1 };
+	//Matrix_Cal::Multiple(viewMatrix, ve0);
+	Matrix_Cal::Multiple(invTMatrix, ve0);
+	Matrix_Cal::Multiple(invRMatrix, ve0);
+	Matrix_Cal::Multiple(matrixP, ve0);
+
+	float ve1[4] = { end[1], 1, end[0], 1 };
+	//Matrix_Cal::Multiple(viewMatrix, ve1);
+	Matrix_Cal::Multiple(invTMatrix, ve1);
+	Matrix_Cal::Multiple(invRMatrix, ve1);
+	Matrix_Cal::Multiple(matrixP, ve1);
+
 	glColor3fv(color);
-	glVertex3f(edge0[X], 1.0f, edge0[Z]);
-	glVertex3f(edge1[X], 1.0f, edge1[Z]);
-	glVertex3f(edge1[X], -1.0f, edge1[Z]);
-	glVertex3f(edge0[X], -1.0f, edge0[Z]);
+	glBegin(GL_QUADS);
+	glVertex4f(vs0[0], vs0[1], vs0[2], vs0[3]);
+	glVertex4f(vs1[0], vs1[1], vs1[2], vs1[3]);
+	glVertex4f(ve0[0], ve0[1], ve0[2], ve0[3]);
+	glVertex4f(ve1[0], ve1[1], ve1[2], ve1[3]);
 	glEnd();
 }
+
 //**********************************************************************
 //
 // * Draws the first-person view of the maze. It is passed the focal distance.
@@ -652,6 +710,7 @@ Draw_View(const float focal_dist)
 
 	glClear(GL_DEPTH_BUFFER_BIT);
 
+	//$$$
 	glEnable(GL_DEPTH_TEST);
 	for (int i = 0; i < (int)this->num_edges; i++)
 	{
@@ -664,7 +723,12 @@ Draw_View(const float focal_dist)
 
 		float color[3] = { this->edges[i]->color[0], this->edges[i]->color[1], this->edges[i]->color[2] };
 		if (this->edges[i]->opaque)
+		{
+			float testst[2] = { 0, 0 };
+			float tested[2] = { 3, 0 };
+			float testcol[3] = { 0.35, 0.53, 0.246 };
 			Draw_Wall(edge_start, edge_end, color);
+		}
 	}
 
 	//###################################################################
