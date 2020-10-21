@@ -96,7 +96,7 @@ class Maze {
 
 		// Draws the first-person view of the maze. It is passed the focal distance.
 		// THIS IS THE FUINCTION YOU SHOULD MODIFY.
-		void	Draw_View(const float);
+		void	Draw_View(float , float aspect);
 
 		// Save the maze to a file of the given name.
 		bool	Save(const char*);
@@ -116,7 +116,7 @@ class Maze {
 		void    Set_Extents(void);
 		void    Find_View_Cell(Cell*);
 
-		void Draw_Wall(const float start[2], const float end[2], const float color[3], const float );
+		void Draw_Wall(const float start[2], const float end[2], const float color[3], float focal_dist, float aspect);
 	private:
 		Cell				*view_cell;// The cell that currently contains the view
 										  // point. You will need to use this.

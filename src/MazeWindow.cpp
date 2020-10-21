@@ -117,13 +117,13 @@ draw(void)
 		// field of view and the size of the image in view space. Note
 		// the static member function of the Maze class for converting
 		// radians to degrees. There is also one defined for going backwards.
-		focal_length = h() / (float)(2.0*tan(Maze::To_Radians(maze->viewer_fov)*0.5));
+		focal_length = w() / (float)(2.0*tan(Maze::To_Radians(maze->viewer_fov)*0.5));
 
 			
-		// Draw the 3D view of the maze (the visible walls.) You write this.
-		// Note that all the information that is required to do the
-		// transformations and projection is contained in the Maze class,
-		// plus the focal length.
+		 //Draw the 3D view of the maze (the visible walls.) You write this.
+		 //Note that all the information that is required to do the
+		 //transformations and projection is contained in the Maze class,
+		 //plus the focal length.
 		
 		//glClear(GL_DEPTH_BUFFER_BIT);
 
@@ -143,19 +143,18 @@ draw(void)
 		//	viewer_pos[Maze::Z] + cos(Maze::To_Radians(maze->viewer_dir)),
 		//	0.0, 1.0, 0.0);
 
-		//GLfloat* projcetionData = new GLfloat[16];
+		//GLfloat projcetionData[16] = { 0 };
 		//glGetFloatv(GL_PROJECTION_MATRIX, projcetionData);
-		//GLfloat* modelViewData = new GLfloat[16];
+		//GLfloat modelViewData[16] = { 0 };
 		//glGetFloatv(GL_MODELVIEW_MATRIX, modelViewData);
 
-		//maze->Draw_View(focal_length);
+		maze->Draw_View(focal_length, w() / h());
 
 		//glMatrixMode(GL_PROJECTION);
 		//glLoadIdentity();
 
 		//glMatrixMode(GL_MODELVIEW);
 		//glLoadIdentity();
-		maze->Draw_View(focal_length);
 	}
 }
 

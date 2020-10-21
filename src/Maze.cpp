@@ -627,7 +627,7 @@ Draw_Map(int min_x, int min_y, int max_x, int max_y)
 		}
 }
 
-void Maze::Draw_Wall(const float start[2], const float end[2], const float color[3], const float focal_dist)
+void Maze::Draw_Wall(const float start[2], const float end[2], const float color[3], float focal_dist, float aspect)
 {
 	//float edge0[3] = { start[Y], 0.0f, start[X] };
 	//float edge1[3] = { end[Y], 0.0f, end[X] };
@@ -640,59 +640,77 @@ void Maze::Draw_Wall(const float start[2], const float end[2], const float color
 	//glEnd();
 
 	//   world   2  camera
-	Matrix4x4 invRMatrix = { -cos(To_Radians(this->viewer_dir)), 0, sin(To_Radians(this->viewer_dir)),  0,
+	Matrix4x4 invRMatrix = { sin(To_Radians(this->viewer_dir)), 0, -cos(To_Radians(this->viewer_dir)),  0,
 								   0, 1,		  0, 0,
-						  -sin(To_Radians(this->viewer_dir)), 0, -cos(To_Radians(this->viewer_dir)),  0,
+							 -cos(To_Radians(this->viewer_dir)), 0, -sin(To_Radians(this->viewer_dir)),  0,
 								   0, 0,		  0, 1 };
-	Matrix4x4 invTMatrix = { 1, 0, 0, -this->viewer_posn[Maze::Y],
-						  0, 1, 0, 0,
-						  0, 0, 1, -this->viewer_posn[Maze::X],
-						  0, 0, 0,	1 };
-	float n = 0.01; // near
-	float t = n * tan(To_Radians(this->viewer_fov / 2)); // t
-	float r = t; // right
-	float f = 100; // far
+	Matrix4x4 invTMatrix = { 1, 0, 0, -this->viewer_posn[Maze::X],
+							 0, 1, 0, 0,
+							 0, 0, 1, -this->viewer_posn[Maze::Y],
+							 0, 0, 0, 1 };
+	float n = 0.01;
+	float t = n * tan(To_Radians(this->viewer_fov / 2)); 
+	float r = aspect * t; 
+	float f = 100; 
 	Matrix_Cal::Multiple4x4(invRMatrix, invTMatrix);
 	Matrix4x4 matrixP = { n/r, 0, 0, 0,
 								  0, n/t, 0, 0,
 								  0, 0, (f+n) / (n - f), -2*f*n / (f-n),
 								  0, 0, -1, 0 };
+	//float d = 600 * tan(To_Radians(this->viewer_dir / 2));
+	//Matrix4x4 matrixP = { 1, 0, 0, 0,
+	//							  0, 1, 0, 0,
+	//							  0, 0, 1, 0,
+	//							  0, 0, 1/d, 0 };
 
-	float vs0[4] = { start[1], 1, start[0], 1 };
-	Matrix_Cal::Multiple(invRMatrix, vs0);	
-	Matrix_Cal::Multiple(matrixP, vs0);
+	float s0[4] = { start[0], 1, start[1], 1 };
+	Matrix_Cal::Multiple(invRMatrix, s0);	
+	Matrix_Cal::Multiple(matrixP, s0);
 
-	float vs1[4] = { start[1], -1, start[0], 1 };
-	Matrix_Cal::Multiple(invRMatrix, vs1); 
-	Matrix_Cal::Multiple(matrixP, vs1);
+	float s1[4] = { start[0], -1, start[1], 1 };
+	Matrix_Cal::Multiple(invRMatrix, s1); 
+	Matrix_Cal::Multiple(matrixP, s1);
 
-	float ve0[4] = { end[1], -1, end[0], 1 };
-	Matrix_Cal::Multiple(invRMatrix, ve0);
-	Matrix_Cal::Multiple(matrixP, ve0);
+	float e0[4] = { end[0], -1, end[1], 1 };
+	Matrix_Cal::Multiple(invRMatrix, e0);
+	Matrix_Cal::Multiple(matrixP, e0);
 
-	float ve1[4] = { end[1], 1, end[0], 1 };
-	Matrix_Cal::Multiple(invRMatrix, ve1);
-	Matrix_Cal::Multiple(matrixP, ve1);
+	float e1[4] = { end[0], 1, end[1], 1 };
+	Matrix_Cal::Multiple(invRMatrix, e1);
+	Matrix_Cal::Multiple(matrixP, e1);
 
-	//for (int i = 0; i < 4; i++)
-	//	vs0[i] /= vs0[3];
-	//for (int i = 0; i < 4; i++)
-	//	vs1[i] /= vs1[3];
-	//for (int i = 0; i < 4; i++)
-	//	ve0[i] /= ve0[3];
-	//for (int i = 0; i < 4; i++)
-	//	ve1[i] /= ve1[3];
+	for (int i = 0; i < 4; i++)
+		s0[i] /= s0[3];
+	for (int i = 0; i < 4; i++)
+		s1[i] /= s1[3];
+	for (int i = 0; i < 4; i++)
+		e0[i] /= e0[3];
+	for (int i = 0; i < 4; i++)
+		e1[i] /= e1[3];
+
 
 	glColor3fv(color);
 	glBegin(GL_QUADS);
-	//glVertex2f(vs0[0], vs0[1]);
-	//glVertex2f(vs1[0], vs1[1]);
-	//glVertex2f(ve0[0], ve0[1]);
-	//glVertex2f(ve1[0], ve1[1]);
-	glVertex4fv(vs0);
-	glVertex4fv(vs1);
-	glVertex4fv(ve0);
-	glVertex4fv(ve1);
+	
+	//glVertex2f(-0.5f, -0.5f);
+	//glVertex2f( 0.5f, -0.5f);
+	//glVertex2f( 0.5f,  0.5f);
+	//glVertex2f(-0.5f,  0.5f);
+	
+	glVertex2f(s0[0] , s0[1]);
+	glVertex2f(s1[0] , s1[1]);
+	glVertex2f(e0[0] , e0[1]);
+	glVertex2f(e1[0] , e1[1]);
+
+	//glVertex3f(s0[0], s0[1], s0[2]);
+	//glVertex3f(s1[0], s1[1], s1[2]);
+	//glVertex3f(e0[0], e0[1], e0[2]);
+	//glVertex3f(e1[0], e1[1], e1[2]);
+
+	//glVertex4fv(s0);
+	//glVertex4fv(s1);
+	//glVertex4fv(e0);
+	//glVertex4fv(e1);
 	glEnd();
 }
 
@@ -702,7 +720,7 @@ void Maze::Draw_Wall(const float start[2], const float end[2], const float color
 //   THIS IS THE FUINCTION YOU SHOULD MODIFY.
 //======================================================================
 void Maze::
-Draw_View(const float focal_dist)
+Draw_View(const float focal_dist, float aspect)
 //======================================================================
 {
 	frame_num++;
@@ -714,7 +732,7 @@ Draw_View(const float focal_dist)
 	glClear(GL_DEPTH_BUFFER_BIT);
 
 	//$$$
-	glEnable(GL_DEPTH_TEST);
+	//glEnable(GL_DEPTH_TEST);
 	for (int i = 0; i < (int)this->num_edges; i++)
 	{
 		float edge_start[2] = {
@@ -730,7 +748,7 @@ Draw_View(const float focal_dist)
 			float testst[2] = { 0, 0 };
 			float tested[2] = { 3, 0 };
 			float testcol[3] = { 0.35, 0.53, 0.246 };
-			Draw_Wall(edge_start, edge_end, color, focal_dist);
+			Draw_Wall(testst, tested, color, focal_dist, aspect);
 		}
 	}
 
