@@ -566,7 +566,6 @@ Set_View_Dir(const float d)
 //======================================================================
 {
 	viewer_dir = d;
-
 	//test
 	//viewer_dir = -120;
 }
@@ -740,9 +739,7 @@ void Maze::Draw_Wall(const float start[2], const float end[2], const float color
 				x = -x;
 			if (e0[1] < 0)
 				x = -x;
-			vp = getViewSpacePoint(s0, e0, x / n);
-			if (vp[1] > 0)
-				return;
+			vp = getViewSpacePoint(s0, e0, n / x);
 			//e 內插到 view space邊
 			e0[0] = vp[0];
 			e0[2] = vp[1];
@@ -787,9 +784,7 @@ void Maze::Draw_Wall(const float start[2], const float end[2], const float color
 				x = -x;
 			if (s0[1] < 0)
 				x = -x;
-			vp = getViewSpacePoint(s0, e0, x / -n);
-			if (vp[1] > 0)
-				return;
+			vp = getViewSpacePoint(s0, e0, n / -x);
 			//s 內插到 view space邊
 			s0[0] = vp[0];
 			s0[2] = vp[1];
@@ -824,28 +819,40 @@ void Maze::Draw_Wall(const float start[2], const float end[2], const float color
 		e1[1] = -e1[1];
 	}
 
+	//float** buffer = new float* [4];
+	//for (int i = 0; i < 4; i++)
+	//	buffer[i] = new float[5];
+	//buffer[0][0] = s0[0];
+	//buffer[0][1] = s0[1];
+	//buffer[0][2] = color[0];
+	//buffer[0][3] = color[1];
+	//buffer[0][4] = color[2];
+
+	//buffer[1][0] = s1[0];
+	//buffer[1][1] = s1[1];
+	//buffer[1][2] = color[0];
+	//buffer[1][3] = color[1];
+	//buffer[1][4] = color[2];
+
+	//buffer[2][0] = e0[0];
+	//buffer[2][1] = e0[1];
+	//buffer[2][2] = color[0];
+	//buffer[2][3] = color[1];
+	//buffer[2][4] = color[2];
+
+	//buffer[3][0] = e1[0];
+	//buffer[3][1] = e1[1];
+	//buffer[3][2] = color[0];
+	//buffer[3][3] = color[1];
+	//buffer[3][4] = color[2];
+
+	//printBuffer.push_back(buffer);
 	glColor3fv(color);
 	glBegin(GL_QUADS);
-	
-	//glVertex2f(-0.5f, -0.5f);
-	//glVertex2f( 0.5f, -0.5f);
-	//glVertex2f( 0.5f,  0.5f);
-	//glVertex2f(-0.5f,  0.5f);
-	
-	glVertex2f(s0[0] , s0[1]);
-	glVertex2f(s1[0] , s1[1]);
-	glVertex2f(e0[0] , e0[1]);
-	glVertex2f(e1[0] , e1[1]);
-
-	//glVertex3f(s0[0], s0[1], s0[2]);
-	//glVertex3f(s1[0], s1[1], s1[2]);
-	//glVertex3f(e0[0], e0[1], e0[2]);
-	//glVertex3f(e1[0], e1[1], e1[2]);
-
-	//glVertex4fv(s0);
-	//glVertex4fv(s1);
-	//glVertex4fv(e0);
-	//glVertex4fv(e1);
+	glVertex2f(s0[0], s0[1]);
+	glVertex2f(s1[0], s1[1]);
+	glVertex2f(e0[0], e0[1]);
+	glVertex2f(e1[0], e1[1]);
 	glEnd();
 }
 
@@ -867,7 +874,7 @@ Draw_View(const float focal_dist, float aspect)
 	glClear(GL_DEPTH_BUFFER_BIT);
 
 	//$$$
-	glEnable(GL_DEPTH_TEST);
+	//glEnable(GL_DEPTH_TEST);
 	for (int i = 0; i < (int)this->num_edges; i++)
 	{
 		float edge_start[2] = {
@@ -880,12 +887,26 @@ Draw_View(const float focal_dist, float aspect)
 		float color[3] = { this->edges[i]->color[0], this->edges[i]->color[1], this->edges[i]->color[2] };
 		if (this->edges[i]->opaque)
 		{
-			float testst[2] = { 3, 0 };
-			float tested[2] = { 3, 5 };
+			float testst[2] = { 0, 0 };
+			float tested[2] = { 0, 6 };
 			float testcol[3] = { 0.51, 0.65, 0.62 };
 			Draw_Wall(edge_start, edge_end, color, focal_dist, aspect);
 		}
 	}
+
+	//for (int i = 0; i < printBuffer.size(); i++)
+	//{
+	//	glBegin(GL_QUADS);
+	//	for (int j = 0; j < 4; j++)
+	//	{
+	//		glColor3f(printBuffer[i][j][2], printBuffer[i][j][3], printBuffer[i][j][4]);
+	//		glVertex2f(printBuffer[i][j][0], printBuffer[i][j][1]);
+	//		delete[] printBuffer[i][j];
+	//	}
+	//	glEnd();
+	//	delete[] printBuffer[i];
+	//}
+	//printBuffer.clear();
 
 	//###################################################################
 

@@ -1,0 +1,68 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "2.8"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						1
+					]
+				}
+			],
+			"name" : "Release",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "MazeVisibility",
+					"targetIndexes" : 
+					[
+						0,
+						1
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "MazeLib::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-MazeLib-Release-3b49dbc7f88968021f46.json",
+					"name" : "MazeLib",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "MazeVisibility::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-MazeVisibility-Release-6dfbde448491bff15959.json",
+					"name" : "MazeVisibility",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "D:/Practicum/CG/Project2/MazeVisibility/out/build/x64-Release",
+		"source" : "D:/Practicum/CG/Project2/MazeVisibility"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 0
+	}
+}

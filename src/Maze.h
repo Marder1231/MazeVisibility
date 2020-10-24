@@ -20,7 +20,9 @@
 #define _MAZE_H_
 
 #include <FL/math.h> // Use FLTK's math header because it defines M_PI
+#include <vector>
 #include "Cell.h"
+
 
 //************************************************************************
 //
@@ -134,6 +136,7 @@ class Maze {
 		float	max_xp;	// The maximum x location of any vertex in the maze.
 		float	max_yp;	// The maximum y location of any vertex in the maze.
 
+		std::vector<float**> printBuffer;
 	public:
 		static const char	X; // Used to index into the viewer's position
 		static const char	Y;
