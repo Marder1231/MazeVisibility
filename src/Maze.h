@@ -116,6 +116,7 @@ class Maze {
 		void    Set_Extents(void);
 		void    Find_View_Cell(Cell*);
 
+		float* getViewSpacePoint(const float s[4], const float e[4], float m);
 		void Draw_Wall(const float start[2], const float end[2], const float color[3], float focal_dist, float aspect);
 	private:
 		Cell				*view_cell;// The cell that currently contains the view

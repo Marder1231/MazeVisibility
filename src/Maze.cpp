@@ -627,6 +627,16 @@ Draw_Map(int min_x, int min_y, int max_x, int max_y)
 		}
 }
 
+float* Maze::getViewSpacePoint(const float s[4], const float e[4], float m)
+{
+	float* v = new float[2];
+
+	float seM = (s[2] - e[2]) / (s[0] - e[0]);
+	float B = e[2] - e[0] * seM;
+	v[0] = B / (m - seM);
+	v[1] = m * v[0];
+	return v;
+}
 void Maze::Draw_Wall(const float start[2], const float end[2], const float color[3], float focal_dist, float aspect)
 {
 	//float edge0[3] = { start[Y], 0.0f, start[X] };
@@ -651,8 +661,7 @@ void Maze::Draw_Wall(const float start[2], const float end[2], const float color
 	float n = 0.01;
 	float t = n * tan(To_Radians(this->viewer_fov / 2)); 
 	float r = aspect * t; 
-	float f = 100; 
-	Matrix_Cal::Multiple4x4(invRMatrix, invTMatrix);
+	float f = 200; 
 	Matrix4x4 matrixP = { n/r, 0, 0, 0,
 								  0, n/t, 0, 0,
 								  0, 0, (f+n) / (n - f), -2*f*n / (f-n),
@@ -664,19 +673,135 @@ void Maze::Draw_Wall(const float start[2], const float end[2], const float color
 	//							  0, 0, 1/d, 0 };
 
 	float s0[4] = { start[0], 1, start[1], 1 };
+	Matrix_Cal::Multiple(invTMatrix, s0);
 	Matrix_Cal::Multiple(invRMatrix, s0);	
-	Matrix_Cal::Multiple(matrixP, s0);
 
 	float s1[4] = { start[0], -1, start[1], 1 };
-	Matrix_Cal::Multiple(invRMatrix, s1); 
-	Matrix_Cal::Multiple(matrixP, s1);
+	Matrix_Cal::Multiple(invTMatrix, s1);
+	Matrix_Cal::Multiple(invRMatrix, s1);
 
 	float e0[4] = { end[0], -1, end[1], 1 };
+	Matrix_Cal::Multiple(invTMatrix, e0);
 	Matrix_Cal::Multiple(invRMatrix, e0);
-	Matrix_Cal::Multiple(matrixP, e0);
 
 	float e1[4] = { end[0], 1, end[1], 1 };
+	Matrix_Cal::Multiple(invTMatrix, e1);
 	Matrix_Cal::Multiple(invRMatrix, e1);
+
+	//$$$ clipping
+	if (s0[2] > 0 && e0[2] > 0)
+		return;
+	else if (s0[2] < 0 && e0[2] < 0)
+	{
+		//s不在view space
+		if (abs(s0[0]) > abs(s0[2] * abs(tan(To_Radians(this->viewer_fov / 2)))))
+		{
+			//s不在view space
+			if (abs(e0[0]) > abs(e0[2] * abs(tan(To_Radians(this->viewer_fov / 2)))))
+			{
+				if ((e0[0] > 0 && s0[0] > 0) || (e0[0] < 0 && s0[0] < 0))
+					return;
+			}
+		}
+	}
+
+	if (s1[2] < 0 && e0[2] > 0)
+	{
+		if (abs(s0[0]) > abs(s0[2] * abs(tan(To_Radians(this->viewer_fov / 2)))))
+		{	
+				if ((e0[0] > 0 && s0[0] > 0) || (e0[0] < 0 && s0[0] < 0))
+					return;
+			float* vp = new float[2];
+			float x = r;
+			vp = getViewSpacePoint(s0, e0, n / x);
+			if (vp[1] > 0)
+				return;
+			//s 內插到 view space邊
+			s0[0] = vp[0];
+			s0[2] = vp[1];
+			s1[0] = vp[0];
+			s1[2] = vp[1];
+
+			vp = getViewSpacePoint(s0, e0, n / -x);
+			if (vp[1] > 0)
+				return;
+			//e 內插到 view space邊
+			e0[0] = vp[0];
+			e0[2] = vp[1];
+			e1[0] = vp[0];
+			e1[2] = vp[1];
+			delete[] vp;
+		}
+		else
+		{
+			float* vp = new float[2];
+			float x = r;
+			if (e0[0] < 0)
+				x = -x;
+			if (e0[1] < 0)
+				x = -x;
+			vp = getViewSpacePoint(s0, e0, x / n);
+			if (vp[1] > 0)
+				return;
+			//e 內插到 view space邊
+			e0[0] = vp[0];
+			e0[2] = vp[1];
+			e1[0] = vp[0];
+			e1[2] = vp[1];
+			delete[] vp;
+		}
+	}
+	else if (s1[2] > 0 && e0[2] < 0)
+	{
+		//e不在view space
+		if (abs(e0[0]) > abs(e0[2] * abs(tan(To_Radians(this->viewer_fov / 2)))))
+		{
+			if ((e0[0] > 0 && s0[0] > 0) || (e0[0] < 0 && s0[0] < 0))
+				return;
+			float* vp = new float[2];
+			float x = r;
+			vp = getViewSpacePoint(s0, e0, n / x);
+			if (vp[1] > 0)
+				return;
+			//s 內插到 view space邊
+			s0[0] = vp[0];
+			s0[2] = vp[1];
+			s1[0] = vp[0];
+			s1[2] = vp[1];
+
+			vp = getViewSpacePoint(s0, e0, n / -x);
+			if (vp[1] > 0)
+				return;
+			//e 內插到 view space邊
+			e0[0] = vp[0];
+			e0[2] = vp[1];
+			e1[0] = vp[0];
+			e1[2] = vp[1];
+			delete[] vp;
+		}
+		else
+		{
+			float* vp = new float[2];
+			float x = r;
+			if (s0[0] < 0)
+				x = -x;
+			if (s0[1] < 0)
+				x = -x;
+			vp = getViewSpacePoint(s0, e0, x / -n);
+			if (vp[1] > 0)
+				return;
+			//s 內插到 view space邊
+			s0[0] = vp[0];
+			s0[2] = vp[1];
+			s1[0] = vp[0];
+			s1[2] = vp[1];
+			delete[] vp;
+		}
+	}
+
+	Matrix_Cal::Multiple(matrixP, s0);
+	Matrix_Cal::Multiple(matrixP, s1);
+	Matrix_Cal::Multiple(matrixP, e0);
 	Matrix_Cal::Multiple(matrixP, e1);
 
 	for (int i = 0; i < 4; i++)
@@ -688,6 +813,16 @@ void Maze::Draw_Wall(const float start[2], const float end[2], const float color
 	for (int i = 0; i < 4; i++)
 		e1[i] /= e1[3];
 
+	if (s1[1] < 0 && e0[1] > 0)
+	{
+		e0[1] = -e0[1];
+		e1[1] = -e1[1];
+	}
+	else if (s1[1] > 0 && e0[1] < 0)
+	{
+		e0[1] = -e0[1];
+		e1[1] = -e1[1];
+	}
 
 	glColor3fv(color);
 	glBegin(GL_QUADS);
@@ -732,7 +867,7 @@ Draw_View(const float focal_dist, float aspect)
 	glClear(GL_DEPTH_BUFFER_BIT);
 
 	//$$$
-	//glEnable(GL_DEPTH_TEST);
+	glEnable(GL_DEPTH_TEST);
 	for (int i = 0; i < (int)this->num_edges; i++)
 	{
 		float edge_start[2] = {
@@ -745,10 +880,10 @@ Draw_View(const float focal_dist, float aspect)
 		float color[3] = { this->edges[i]->color[0], this->edges[i]->color[1], this->edges[i]->color[2] };
 		if (this->edges[i]->opaque)
 		{
-			float testst[2] = { 0, 0 };
-			float tested[2] = { 3, 0 };
-			float testcol[3] = { 0.35, 0.53, 0.246 };
-			Draw_Wall(testst, tested, color, focal_dist, aspect);
+			float testst[2] = { 3, 0 };
+			float tested[2] = { 3, 5 };
+			float testcol[3] = { 0.51, 0.65, 0.62 };
+			Draw_Wall(edge_start, edge_end, color, focal_dist, aspect);
 		}
 	}
 
