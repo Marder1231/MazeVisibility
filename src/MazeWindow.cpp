@@ -124,7 +124,7 @@ draw(void)
 		 //Note that all the information that is required to do the
 		 //transformations and projection is contained in the Maze class,
 		 //plus the focal length.
-		
+
 		//glClear(GL_DEPTH_BUFFER_BIT);
 
 		//glMatrixMode(GL_PROJECTION);

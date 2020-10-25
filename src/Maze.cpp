@@ -16,6 +16,7 @@
 
 *************************************************************************/
 
+#include <iostream>
 #include "Maze.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -626,6 +627,8 @@ Draw_Map(int min_x, int min_y, int max_x, int max_y)
 		}
 }
 
+
+//找兩點跟此斜率交點
 float* Maze::getViewSpacePoint(const float s[4], const float e[4], float m)
 {
 	float* v = new float[2];
@@ -687,6 +690,7 @@ void Maze::Draw_Wall(const float start[2], const float end[2], const float color
 	Matrix_Cal::Multiple(invTMatrix, e1);
 	Matrix_Cal::Multiple(invRMatrix, e1);
 
+
 	//$$$ clipping
 	if (s0[2] > 0 && e0[2] > 0)
 		return;
@@ -735,11 +739,14 @@ void Maze::Draw_Wall(const float start[2], const float end[2], const float color
 		{
 			float* vp = new float[2];
 			float x = r;
-			if (e0[0] < 0)
-				x = -x;
-			if (e0[1] < 0)
-				x = -x;
 			vp = getViewSpacePoint(s0, e0, n / x);
+			if (vp[1] < 0 && ((s0[0] < vp[0] && vp[0] < e0[0] ) || (s0[0] > vp[0] && vp[0] > e0[0])))
+			{
+
+			}
+			else
+				vp = getViewSpacePoint(s0, e0, -n / x);
+
 			//e 內插到 view space邊
 			e0[0] = vp[0];
 			e0[2] = vp[1];
@@ -780,11 +787,12 @@ void Maze::Draw_Wall(const float start[2], const float end[2], const float color
 		{
 			float* vp = new float[2];
 			float x = r;
-			if (s0[0] < 0)
-				x = -x;
-			if (s0[1] < 0)
-				x = -x;
-			vp = getViewSpacePoint(s0, e0, n / -x);
+			vp = getViewSpacePoint(s0, e0, n / x);
+			if (vp[1] < 0 && ((s0[0] < vp[0] && vp[0] < e0[0]) || (s0[0] > vp[0] && vp[0] > e0[0])))
+			{
+			}
+			else
+				vp = getViewSpacePoint(s0, e0, -n / x);
 			//s 內插到 view space邊
 			s0[0] = vp[0];
 			s0[2] = vp[1];
@@ -818,42 +826,42 @@ void Maze::Draw_Wall(const float start[2], const float end[2], const float color
 		e0[1] = -e0[1];
 		e1[1] = -e1[1];
 	}
+	//glColor3fv(color);
+	//glBegin(GL_QUADS);
+	//glVertex2f(s0[0], s0[1]);
+	//glVertex2f(s1[0], s1[1]);
+	//glVertex2f(e0[0], e0[1]);
+	//glVertex2f(e1[0], e1[1]);
+	//glEnd();
 
-	//float** buffer = new float* [4];
-	//for (int i = 0; i < 4; i++)
-	//	buffer[i] = new float[5];
-	//buffer[0][0] = s0[0];
-	//buffer[0][1] = s0[1];
-	//buffer[0][2] = color[0];
-	//buffer[0][3] = color[1];
-	//buffer[0][4] = color[2];
+	float** buffer = new float* [4];
+	for (int i = 0; i < 4; i++)
+		buffer[i] = new float[5];
+	buffer[0][0] = s0[0];
+	buffer[0][1] = s0[1];
+	buffer[0][2] = color[0];
+	buffer[0][3] = color[1];
+	buffer[0][4] = color[2];
 
-	//buffer[1][0] = s1[0];
-	//buffer[1][1] = s1[1];
-	//buffer[1][2] = color[0];
-	//buffer[1][3] = color[1];
-	//buffer[1][4] = color[2];
+	buffer[1][0] = s1[0];
+	buffer[1][1] = s1[1];
+	buffer[1][2] = color[0];
+	buffer[1][3] = color[1];
+	buffer[1][4] = color[2];
 
-	//buffer[2][0] = e0[0];
-	//buffer[2][1] = e0[1];
-	//buffer[2][2] = color[0];
-	//buffer[2][3] = color[1];
-	//buffer[2][4] = color[2];
+	buffer[2][0] = e0[0];
+	buffer[2][1] = e0[1];
+	buffer[2][2] = color[0];
+	buffer[2][3] = color[1];
+	buffer[2][4] = color[2];
 
-	//buffer[3][0] = e1[0];
-	//buffer[3][1] = e1[1];
-	//buffer[3][2] = color[0];
-	//buffer[3][3] = color[1];
-	//buffer[3][4] = color[2];
+	buffer[3][0] = e1[0];
+	buffer[3][1] = e1[1];
+	buffer[3][2] = color[0];
+	buffer[3][3] = color[1];
+	buffer[3][4] = color[2];
 
-	//printBuffer.push_back(buffer);
-	glColor3fv(color);
-	glBegin(GL_QUADS);
-	glVertex2f(s0[0], s0[1]);
-	glVertex2f(s1[0], s1[1]);
-	glVertex2f(e0[0], e0[1]);
-	glVertex2f(e1[0], e1[1]);
-	glEnd();
+	printBuffer.push_back(buffer);
 }
 
 //**********************************************************************
@@ -872,6 +880,15 @@ Draw_View(const float focal_dist, float aspect)
 	// The rest is up to you!
 
 	glClear(GL_DEPTH_BUFFER_BIT);
+
+	//std::vector<Cell*> nextCells;
+	//nextCells.push_back(view_cell);
+	//while (nextCells.size() > 0)
+	//{
+	//	Cell* nowCell = nextCells[0];
+
+
+	//}
 
 	//$$$
 	//glEnable(GL_DEPTH_TEST);
@@ -894,6 +911,30 @@ Draw_View(const float focal_dist, float aspect)
 		}
 	}
 
+
+
+	for (int i = 0; i < printBuffer.size(); i++)
+	{
+		glColor3f(printBuffer[i][0][2], printBuffer[i][0][3], printBuffer[i][0][4]);
+		glBegin(GL_QUADS);
+		for (int j = 0; j < 4; j++)
+		{
+			glVertex2f(printBuffer[i][j][0], printBuffer[i][j][1]);
+		}
+		glEnd();
+	}
+
+	//std::cout << "view index " << view_cell->index << "  neighbor index ";
+	//if (view_cell->edges[0]->Neighbor(view_cell) != NULL)
+	//	std::cout << " 1- " << view_cell->edges[0]->Neighbor(view_cell)->index;
+	//if (view_cell->edges[1]->Neighbor(view_cell) != NULL)
+	//	std::cout << " 2- " << view_cell->edges[1]->Neighbor(view_cell)->index;
+	//if (view_cell->edges[2]->Neighbor(view_cell) != NULL)
+	//	std::cout << " 3- " << view_cell->edges[2]->Neighbor(view_cell)->index;
+	//if (view_cell->edges[3]->Neighbor(view_cell) != NULL)
+	//	std::cout << " 4- " << view_cell->edges[3]->Neighbor(view_cell)->index;
+	//std::cout << std::endl;
+	printBuffer.clear();
 	//for (int i = 0; i < printBuffer.size(); i++)
 	//{
 	//	glBegin(GL_QUADS);
