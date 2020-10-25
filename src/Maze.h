@@ -118,10 +118,11 @@ class Maze {
 		void    Set_Extents(void);
 		void    Find_View_Cell(Cell*);
 
+		float** ADrawWall(const float start[2], const float end[2], const float color[3], float viewSlopeR, float viewSlopeL);
 		float* getViewSpacePoint(const float s[4], const float e[4], float m);
 		void Draw_Wall(const float start[2], const float end[2], const float color[3], float focal_dist, float aspect);
 	private:
-		Cell				*view_cell;// The cell that currently contains the view
+		Cell  *view_cell;// The cell that currently contains the view
 										  // point. You will need to use this.
 		unsigned int    frame_num;	// The frame number we are currently drawing.
 											// It isn't necessary, but you might find it
@@ -135,8 +136,6 @@ class Maze {
 		float	min_yp;	// The minimum y location of any vertex in the maze.
 		float	max_xp;	// The maximum x location of any vertex in the maze.
 		float	max_yp;	// The maximum y location of any vertex in the maze.
-
-		std::vector<float**> printBuffer;
 	public:
 		static const char	X; // Used to index into the viewer's position
 		static const char	Y;

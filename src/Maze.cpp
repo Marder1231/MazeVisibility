@@ -1,3 +1,4 @@
+#include "Maze.h"
 /************************************************************************
      File:        Maze.cpp
 
@@ -16,13 +17,16 @@
 
 *************************************************************************/
 
-#include <iostream>
 #include "Maze.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
 #include <time.h>
+#include <vector>
+#include <map>
+#include <set>
+#include <algorithm>
 #include <FL/Fl.h>
 #include <FL/fl_draw.h>
 #include <Fl/math.h>
@@ -628,6 +632,170 @@ Draw_Map(int min_x, int min_y, int max_x, int max_y)
 }
 
 
+float** Maze::ADrawWall(const float start[2], const float end[2], const float color[3], float viewSlopeR, float viewSlopeL)
+{
+	//   world   2  camera
+	Matrix4x4 invRMatrix = { sin(To_Radians(this->viewer_dir)), 0, -cos(To_Radians(this->viewer_dir)),  0,
+								   0, 1,		  0, 0,
+							 -cos(To_Radians(this->viewer_dir)), 0, -sin(To_Radians(this->viewer_dir)),  0,
+								   0, 0,		  0, 1 };
+	Matrix4x4 invTMatrix = { 1, 0, 0, -this->viewer_posn[Maze::X],
+							 0, 1, 0, 0,
+							 0, 0, 1, -this->viewer_posn[Maze::Y],
+							 0, 0, 0, 1 };
+	float n = 0.01;
+	float t = n * tan(To_Radians(this->viewer_fov / 2));
+	float r = t;
+	float f = 200;
+	Matrix4x4 matrixP = { n / r, 0, 0, 0,
+								  0, n / t, 0, 0,
+								  0, 0, (f + n) / (n - f), -2 * f * n / (f - n),
+								  0, 0, -1, 0 };
+
+	float s0[4] = { start[0], 1, start[1], 1 };
+	Matrix_Cal::Multiple(invTMatrix, s0);
+	Matrix_Cal::Multiple(invRMatrix, s0);
+
+	float e0[4] = { end[0], -1, end[1], 1 };
+	Matrix_Cal::Multiple(invTMatrix, e0);
+	Matrix_Cal::Multiple(invRMatrix, e0);
+
+	if (s0[2] > 0 && e0[2] > 0)
+		return NULL;
+	else if (s0[2] < 0 && e0[2] < 0)
+	{
+		//s不在view space
+		if (abs(s0[0]) > abs(s0[2] * abs(tan(To_Radians(this->viewer_fov / 2)))))
+		{
+			//s不在view space
+			if (abs(e0[0]) > abs(e0[2] * abs(tan(To_Radians(this->viewer_fov / 2)))))
+			{
+				//在同一邊
+				if ((e0[0] > 0 && s0[0] > 0) || (e0[0] < 0 && s0[0] < 0))
+					return NULL;
+				else
+				{
+					float* vp = new float[2];
+					float x = r;
+					vp = getViewSpacePoint(s0, e0, viewSlopeR);
+					if (vp[1] > 0)
+						return NULL;
+					//s 內插到 view space邊
+					s0[0] = vp[0];
+					s0[2] = vp[1];
+
+					vp = getViewSpacePoint(s0, e0, viewSlopeL);
+					if (vp[1] > 0)
+						return NULL;
+					//e 內插到 view space邊
+					e0[0] = vp[0];
+					e0[2] = vp[1];
+					delete[] vp;
+				}
+			}
+		}
+	}
+
+	//一點在相機後 一點在相機前
+	if (s0[2] < 0 && e0[2] > 0)
+	{
+		//是否看到的在相機前的點
+		if (abs(s0[0]) > abs(s0[2] * abs(tan(To_Radians(this->viewer_fov / 2)))))	//看不到
+		{
+			if ((e0[0] > 0 && s0[0] > 0) || (e0[0] < 0 && s0[0] < 0))
+				return NULL;
+			float* vp = new float[2];
+			float x = r;
+			vp = getViewSpacePoint(s0, e0, viewSlopeR);
+			if (vp[1] > 0)
+				return NULL;
+			//s 內插到 view space邊
+			s0[0] = vp[0];
+			s0[2] = vp[1];
+
+			vp = getViewSpacePoint(s0, e0, viewSlopeL);
+			if (vp[1] > 0)
+				return NULL;
+			//e 內插到 view space邊
+			e0[0] = vp[0];
+			e0[2] = vp[1];
+			delete[] vp;
+		}
+		else
+		{
+			float* vp = new float[2];
+			float x = r;
+			vp = getViewSpacePoint(s0, e0, viewSlopeR);
+			if (vp[1] < 0 && ((s0[0] < vp[0] && vp[0] < e0[0]) || (s0[0] > vp[0] && vp[0] > e0[0])))
+			{
+
+			}
+			else
+				vp = getViewSpacePoint(s0, e0, viewSlopeL);
+
+			//e 內插到 view space邊
+			e0[0] = vp[0];
+			e0[2] = vp[1];
+			delete[] vp;
+		}
+	}
+	else if (s0[2] > 0 && e0[2] < 0)
+	{
+		//e不在view space
+		if (abs(e0[0]) > abs(e0[2] * abs(tan(To_Radians(this->viewer_fov / 2)))))
+		{
+			if ((e0[0] > 0 && s0[0] > 0) || (e0[0] < 0 && s0[0] < 0))
+				return NULL;
+			float* vp = new float[2];
+			float x = r;
+			vp = getViewSpacePoint(s0, e0, viewSlopeR);
+			if (vp[1] > 0)
+				return NULL;
+			//s 內插到 view space邊
+			s0[0] = vp[0];
+			s0[2] = vp[1];
+
+			vp = getViewSpacePoint(s0, e0, viewSlopeL);
+			if (vp[1] > 0)
+				return NULL;
+			//e 內插到 view space邊
+			e0[0] = vp[0];
+			e0[2] = vp[1];
+			delete[] vp;
+		}
+		else
+		{
+			float* vp = new float[2];
+			float x = r;
+			vp = getViewSpacePoint(s0, e0, viewSlopeR);
+			if (vp[1] < 0 && ((s0[0] < vp[0] && vp[0] < e0[0]) || (s0[0] > vp[0] && vp[0] > e0[0])))
+			{
+			}
+			else
+				vp = getViewSpacePoint(s0, e0, viewSlopeL);
+			//s 內插到 view space邊
+			s0[0] = vp[0];
+			s0[2] = vp[1];
+			delete[] vp;
+		}
+	}
+
+	float** buffer = new float* [2];
+	for (int i = 0; i < 2; i++)
+		buffer[i] = new float[5];
+	buffer[0][0] = s0[0];
+	buffer[0][1] = s0[2];
+	buffer[0][2] = color[0];
+	buffer[0][3] = color[1];
+	buffer[0][4] = color[2];
+
+	buffer[1][0] = e0[0];
+	buffer[1][1] = e0[2];
+	buffer[1][2] = color[0];
+	buffer[1][3] = color[1];
+	buffer[1][4] = color[2];
+	return buffer;
+}
 //找兩點跟此斜率交點
 float* Maze::getViewSpacePoint(const float s[4], const float e[4], float m)
 {
@@ -692,7 +860,7 @@ void Maze::Draw_Wall(const float start[2], const float end[2], const float color
 
 
 	//$$$ clipping
-	if (s0[2] > 0 && e0[2] > 0)
+	if (s0[2] > -n && e0[2] > -n)
 		return;
 	else if (s0[2] < 0 && e0[2] < 0)
 	{
@@ -704,6 +872,29 @@ void Maze::Draw_Wall(const float start[2], const float end[2], const float color
 			{
 				if ((e0[0] > 0 && s0[0] > 0) || (e0[0] < 0 && s0[0] < 0))
 					return;
+				else
+				{
+					float* vp = new float[2];
+					float x = r;
+					vp = getViewSpacePoint(s0, e0, n/x);
+					if (vp[1] > 0)
+						return;
+					//s 內插到 view space邊
+					s0[0] = vp[0];
+					s0[2] = vp[1];
+					s1[0] = vp[0];
+					s1[2] = vp[1];
+
+					vp = getViewSpacePoint(s0, e0, -n/x);
+					if (vp[1] > 0)
+						return;
+					//e 內插到 view space邊
+					e0[0] = vp[0];
+					e0[2] = vp[1];
+					e1[0] = vp[0];
+					e1[2] = vp[1];
+					delete[] vp;
+				}
 			}
 		}
 	}
@@ -807,6 +998,10 @@ void Maze::Draw_Wall(const float start[2], const float end[2], const float color
 	Matrix_Cal::Multiple(matrixP, e0);
 	Matrix_Cal::Multiple(matrixP, e1);
 
+	//太她媽近
+	if (s0[3] < n || e0[3] < n)
+		return;
+
 	for (int i = 0; i < 4; i++)
 		s0[i] /= s0[3];
 	for (int i = 0; i < 4; i++)
@@ -826,42 +1021,13 @@ void Maze::Draw_Wall(const float start[2], const float end[2], const float color
 		e0[1] = -e0[1];
 		e1[1] = -e1[1];
 	}
-	//glColor3fv(color);
-	//glBegin(GL_QUADS);
-	//glVertex2f(s0[0], s0[1]);
-	//glVertex2f(s1[0], s1[1]);
-	//glVertex2f(e0[0], e0[1]);
-	//glVertex2f(e1[0], e1[1]);
-	//glEnd();
-
-	float** buffer = new float* [4];
-	for (int i = 0; i < 4; i++)
-		buffer[i] = new float[5];
-	buffer[0][0] = s0[0];
-	buffer[0][1] = s0[1];
-	buffer[0][2] = color[0];
-	buffer[0][3] = color[1];
-	buffer[0][4] = color[2];
-
-	buffer[1][0] = s1[0];
-	buffer[1][1] = s1[1];
-	buffer[1][2] = color[0];
-	buffer[1][3] = color[1];
-	buffer[1][4] = color[2];
-
-	buffer[2][0] = e0[0];
-	buffer[2][1] = e0[1];
-	buffer[2][2] = color[0];
-	buffer[2][3] = color[1];
-	buffer[2][4] = color[2];
-
-	buffer[3][0] = e1[0];
-	buffer[3][1] = e1[1];
-	buffer[3][2] = color[0];
-	buffer[3][3] = color[1];
-	buffer[3][4] = color[2];
-
-	printBuffer.push_back(buffer);
+	glColor3fv(color);
+	glBegin(GL_QUADS);
+	glVertex2f(s0[0], s0[1]);
+	glVertex2f(s1[0], s1[1]);
+	glVertex2f(e0[0], e0[1]);
+	glVertex2f(e1[0], e1[1]);
+	glEnd();
 }
 
 //**********************************************************************
@@ -881,33 +1047,86 @@ Draw_View(const float focal_dist, float aspect)
 
 	glClear(GL_DEPTH_BUFFER_BIT);
 
-	//std::vector<Cell*> nextCells;
-	//nextCells.push_back(view_cell);
-	//while (nextCells.size() > 0)
-	//{
-	//	Cell* nowCell = nextCells[0];
+	float n = 0.01;
+	float t = n * tan(To_Radians(this->viewer_fov / 2));
+	float r = aspect * t;
+	float f = 200;
+	Matrix4x4 matrixP = { n / r, 0, 0, 0,
+								  0, n / t, 0, 0,
+								  0, 0, (f + n) / (n - f), -2 * f * n / (f - n),
+								  0, 0, -1, 0 };
+	std::vector<Cell*> nextCells;
+	std::set<int> alreadyHandleCellIndexs;
+	std::map<int, float*> cellViewSlope;
+	//給view兩個切入點座標
+	nextCells.push_back(view_cell);
+	float viewSlope[2] = { n / r, -n / r };
+	cellViewSlope[view_cell->index] = viewSlope;
 
+	std::vector<float**> printBuffer;
 
-	//}
-
-	//$$$
-	//glEnable(GL_DEPTH_TEST);
-	for (int i = 0; i < (int)this->num_edges; i++)
+	while (nextCells.size() > 0)
 	{
-		float edge_start[2] = {
-			this->edges[i]->endpoints[Edge::START]->posn[Vertex::X],
-			this->edges[i]->endpoints[Edge::START]->posn[Vertex::Y] };
-		float edge_end[2] = {
-			this->edges[i]->endpoints[Edge::END]->posn[Vertex::X],
-			this->edges[i]->endpoints[Edge::END]->posn[Vertex::Y] };
-
-		float color[3] = { this->edges[i]->color[0], this->edges[i]->color[1], this->edges[i]->color[2] };
-		if (this->edges[i]->opaque)
+		Cell* nowCell = nextCells[0];
+		nextCells.erase(nextCells.begin());
+		alreadyHandleCellIndexs.insert(nowCell->index);
+		for (int i = 0; i < 4; i++)
 		{
-			float testst[2] = { 0, 0 };
-			float tested[2] = { 0, 6 };
-			float testcol[3] = { 0.51, 0.65, 0.62 };
-			Draw_Wall(edge_start, edge_end, color, focal_dist, aspect);
+			float edge_start[2] = {
+				nowCell->edges[i]->endpoints[Edge::START]->posn[Vertex::X],
+				nowCell->edges[i]->endpoints[Edge::START]->posn[Vertex::Y] };
+			float edge_end[2] = {
+				nowCell->edges[i]->endpoints[Edge::END]->posn[Vertex::X],
+				nowCell->edges[i]->endpoints[Edge::END]->posn[Vertex::Y] };
+
+			if (edge_start[1] > edge_end[1])
+				std::swap(edge_start[1], edge_end[1]);
+			if(edge_start[0] > edge_end[0])
+				std::swap(edge_start[0], edge_end[0]);
+
+
+			float color[3] = { nowCell->edges[i]->color[0], nowCell->edges[i]->color[1], nowCell->edges[i]->color[2] };
+			
+			float** drawWall = ADrawWall(edge_start, edge_end, color, cellViewSlope[nowCell->index][0], cellViewSlope[nowCell->index][1]);
+			if (drawWall != NULL)
+			{
+				//是否不透明
+				if (nowCell->edges[i]->opaque == false)		//透明
+				{
+					float slopeSort[4] =
+					{
+						1.0 / cellViewSlope[nowCell->index][0],
+						1.0 / cellViewSlope[nowCell->index][1],
+						1.0 / (drawWall[0][1] / drawWall[0][0]),
+						1.0 / (drawWall[1][1] / drawWall[1][0]),
+					};
+
+					if (
+						( (slopeSort[0] <= slopeSort[2]) && (slopeSort[2] <= slopeSort[1]) ) ||
+						( (slopeSort[0] <= slopeSort[3]) && (slopeSort[3] <= slopeSort[1]) ) ||
+						( (slopeSort[0] >= slopeSort[2]) && (slopeSort[2] >= slopeSort[1]) ) ||
+						( (slopeSort[0] >= slopeSort[3]) && (slopeSort[3] >= slopeSort[1]) )
+					   )
+					{
+						std::sort(slopeSort, slopeSort + 4);
+
+						if (nowCell->edges[i]->Neighbor(nowCell) != NULL)
+						{
+							int neighborCellIndex = nowCell->edges[i]->Neighbor(nowCell)->index;
+
+							if (alreadyHandleCellIndexs.find(neighborCellIndex) == alreadyHandleCellIndexs.end())
+							{
+								nextCells.push_back(nowCell->edges[i]->Neighbor(nowCell));
+
+								float newSlope[2] = { 1.0 / slopeSort[0] , 1.0 / slopeSort[3] };
+								cellViewSlope[nowCell->edges[i]->Neighbor(nowCell)->index] = newSlope;
+							}
+						}
+					}
+				}
+				else
+					printBuffer.push_back(drawWall);
+			}
 		}
 	}
 
@@ -915,14 +1134,71 @@ Draw_View(const float focal_dist, float aspect)
 
 	for (int i = 0; i < printBuffer.size(); i++)
 	{
-		glColor3f(printBuffer[i][0][2], printBuffer[i][0][3], printBuffer[i][0][4]);
-		glBegin(GL_QUADS);
-		for (int j = 0; j < 4; j++)
+		float color[3] = { printBuffer[i][0][2], printBuffer[i][0][3], printBuffer[i][0][4] };
+		float vertex[4][4] =
 		{
-			glVertex2f(printBuffer[i][j][0], printBuffer[i][j][1]);
+			printBuffer[i][0][0], 1, printBuffer[i][0][1],  1,
+			printBuffer[i][0][0], -1, printBuffer[i][0][1], 1,
+			printBuffer[i][1][0], -1, printBuffer[i][1][1], 1,
+			printBuffer[i][1][0], 1, printBuffer[i][1][1], 1,
+		};
+
+		Matrix_Cal::Multiple(matrixP, vertex[0]);
+		Matrix_Cal::Multiple(matrixP, vertex[1]);
+		Matrix_Cal::Multiple(matrixP, vertex[2]);
+		Matrix_Cal::Multiple(matrixP, vertex[3]);
+
+		for (int i = 0; i < 4; i++)
+			vertex[0][i] /= vertex[0][3];
+		for (int i = 0; i < 4; i++)
+			vertex[1][i] /= vertex[1][3];
+		for (int i = 0; i < 4; i++)
+			vertex[2][i] /= vertex[2][3];
+		for (int i = 0; i < 4; i++)
+			vertex[3][i] /= vertex[3][3];
+
+		if (vertex[1][1] < 0 && vertex[2][1] > 0)
+		{
+			vertex[2][1] = -vertex[2][1];
+			vertex[3][1] = -vertex[3][1];
 		}
+		else if (vertex[1][1] > 0 && vertex[2][1] < 0)
+		{
+			vertex[2][1] = -vertex[2][1];
+			vertex[3][1] = -vertex[3][1];
+		}
+		glColor3fv(color);
+		glBegin(GL_QUADS);
+		glVertex2f(vertex[0][0], vertex[0][1]);
+		glVertex2f(vertex[1][0], vertex[1][1]);
+		glVertex2f(vertex[2][0], vertex[2][1]);
+		glVertex2f(vertex[3][0], vertex[3][1]);
 		glEnd();
+		delete[] printBuffer[i][0];
+		delete[] printBuffer[i][1];
+		delete[] printBuffer[i];
 	}
+
+	//$$$
+	//glEnable(GL_DEPTH_TEST);
+	//for (int i = 0; i < (int)this->num_edges; i++)
+	//{
+	//	float edge_start[2] = {
+	//		this->edges[i]->endpoints[Edge::START]->posn[Vertex::X],
+	//		this->edges[i]->endpoints[Edge::START]->posn[Vertex::Y] };
+	//	float edge_end[2] = {
+	//		this->edges[i]->endpoints[Edge::END]->posn[Vertex::X],
+	//		this->edges[i]->endpoints[Edge::END]->posn[Vertex::Y] };
+
+	//	float color[3] = { this->edges[i]->color[0], this->edges[i]->color[1], this->edges[i]->color[2] };
+	//	if (this->edges[i]->opaque)
+	//	{
+	//		float testst[2] = { 0, 0 };
+	//		float tested[2] = { 0, 6 };
+	//		float testcol[3] = { 0.51, 0.65, 0.62 };
+	//		Draw_Wall(edge_start, edge_end, color, focal_dist, aspect);
+	//	}
+	//}
 
 	//std::cout << "view index " << view_cell->index << "  neighbor index ";
 	//if (view_cell->edges[0]->Neighbor(view_cell) != NULL)
@@ -934,20 +1210,6 @@ Draw_View(const float focal_dist, float aspect)
 	//if (view_cell->edges[3]->Neighbor(view_cell) != NULL)
 	//	std::cout << " 4- " << view_cell->edges[3]->Neighbor(view_cell)->index;
 	//std::cout << std::endl;
-	printBuffer.clear();
-	//for (int i = 0; i < printBuffer.size(); i++)
-	//{
-	//	glBegin(GL_QUADS);
-	//	for (int j = 0; j < 4; j++)
-	//	{
-	//		glColor3f(printBuffer[i][j][2], printBuffer[i][j][3], printBuffer[i][j][4]);
-	//		glVertex2f(printBuffer[i][j][0], printBuffer[i][j][1]);
-	//		delete[] printBuffer[i][j];
-	//	}
-	//	glEnd();
-	//	delete[] printBuffer[i];
-	//}
-	//printBuffer.clear();
 
 	//###################################################################
 
