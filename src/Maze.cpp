@@ -634,6 +634,8 @@ Draw_Map(int min_x, int min_y, int max_x, int max_y)
 
 float** Maze::ADrawWall(const float start[2], const float end[2], const float color[3], float viewSlopeR, float viewSlopeL)
 {
+	viewSlopeL = -viewSlopeL;
+	viewSlopeR = -viewSlopeR;
 	//   world   2  camera
 	Matrix4x4 invRMatrix = { sin(To_Radians(this->viewer_dir)), 0, -cos(To_Radians(this->viewer_dir)),  0,
 								   0, 1,		  0, 0,
@@ -643,14 +645,6 @@ float** Maze::ADrawWall(const float start[2], const float end[2], const float co
 							 0, 1, 0, 0,
 							 0, 0, 1, -this->viewer_posn[Maze::Y],
 							 0, 0, 0, 1 };
-	float n = 0.01;
-	float t = n * tan(To_Radians(this->viewer_fov / 2));
-	float r = t;
-	float f = 200;
-	Matrix4x4 matrixP = { n / r, 0, 0, 0,
-								  0, n / t, 0, 0,
-								  0, 0, (f + n) / (n - f), -2 * f * n / (f - n),
-								  0, 0, -1, 0 };
 
 	float s0[4] = { start[0], 1, start[1], 1 };
 	Matrix_Cal::Multiple(invTMatrix, s0);
@@ -660,10 +654,43 @@ float** Maze::ADrawWall(const float start[2], const float end[2], const float co
 	Matrix_Cal::Multiple(invTMatrix, e0);
 	Matrix_Cal::Multiple(invRMatrix, e0);
 
+	float n = 0.01;
+	float r = n * tan(To_Radians(this->viewer_fov / 2));
+	
 	if (s0[2] > 0 && e0[2] > 0)
 		return NULL;
 	else if (s0[2] < 0 && e0[2] < 0)
 	{
+		//	//s不在view space
+		//	if (abs(s0[2]) < abs(s0[0] * abs(viewSlopeL)))
+		//	{
+		//		float* vp = new float[2];
+		//		float x = r;
+		//		vp = getViewSpacePoint(s0, e0, viewSlopeL);
+		//		if (vp[1] > 0)
+		//			return NULL;
+		//		//s 內插到 view space邊
+		//		s0[0] = vp[0];
+		//		s0[2] = vp[1];
+		//		delete[] vp;
+		//	}
+		//	//s不在view space
+		//	if (abs(e0[2]) < abs(e0[0] * abs(viewSlopeR)))
+		//	{
+		//		float* vp = new float[2];
+		//		float x = r;
+
+		//		vp = getViewSpacePoint(s0, e0, viewSlopeR);
+		//		if (vp[1] > 0)
+		//			return NULL;
+		//		//e 內插到 view space邊
+		//		e0[0] = vp[0];
+		//		e0[2] = vp[1];
+		//		delete[] vp;
+		//	}
+
+		bool sInViewSpace = false;
+		bool eInViewSpace = false;
 		//s不在view space
 		if (abs(s0[0]) > abs(s0[2] * abs(tan(To_Radians(this->viewer_fov / 2)))))
 		{
@@ -693,7 +720,172 @@ float** Maze::ADrawWall(const float start[2], const float end[2], const float co
 					delete[] vp;
 				}
 			}
+			else eInViewSpace = true;
 		}
+		else sInViewSpace = true;
+
+		if (sInViewSpace == true)
+		{
+			float slopeFromCameraS = (s0[2] / s0[0]);
+			float slopeFromCameraE = (e0[2] / e0[0]);
+
+			if ((1.0 / slopeFromCameraE <= 1.0 / viewSlopeR) && (1.0 /viewSlopeR <= 1.0 / slopeFromCameraS))
+			{
+				float* vp = new float[2];
+				float x = r;
+				vp = getViewSpacePoint(s0, e0, viewSlopeR);
+				if (vp[1] > 0)
+					return NULL;
+				//s 內插到 view space邊
+				e0[0] = vp[0];
+				e0[2] = vp[1];
+				delete[] vp;
+			}
+			else if ((1.0 / slopeFromCameraE >= 1.0 / viewSlopeR) && (1.0 / viewSlopeR >= 1.0 / slopeFromCameraS))
+			{
+				float* vp = new float[2];
+				float x = r;
+				vp = getViewSpacePoint(s0, e0, viewSlopeR);
+				if (vp[1] > 0)
+					return NULL;
+				//s 內插到 view space邊
+				e0[0] = vp[0];
+				e0[2] = vp[1];
+				delete[] vp;
+			}
+
+			if ((1.0 / slopeFromCameraE <= 1.0 / viewSlopeL) && (1.0 / viewSlopeL <= 1.0 / slopeFromCameraS))
+			{
+				float* vp = new float[2];
+				float x = r;
+				vp = getViewSpacePoint(s0, e0, viewSlopeL);
+				if (vp[1] > 0)
+					return NULL;
+				//s 內插到 view space邊
+				e0[0] = vp[0];
+				e0[2] = vp[1];
+				delete[] vp;
+			}
+			else if ((1.0 / slopeFromCameraE >= 1.0 / viewSlopeL) && (1.0 / viewSlopeL >= 1.0 / slopeFromCameraS))
+			{
+				float* vp = new float[2];
+				float x = r;
+				vp = getViewSpacePoint(s0, e0, viewSlopeL);
+				if (vp[1] > 0)
+					return NULL;
+				//s 內插到 view space邊
+				e0[0] = vp[0];
+				e0[2] = vp[1];
+				delete[] vp;
+			}
+		}
+		else if (eInViewSpace == true)
+		{
+			float slopeFromCameraS = (s0[2] / s0[0]);
+			float slopeFromCameraE = (e0[2] / e0[0]);
+
+			if ((1.0 / slopeFromCameraE <= 1.0 / viewSlopeR) && (1.0 / viewSlopeR <= 1.0 / slopeFromCameraS))
+			{
+				float* vp = new float[2];
+				float x = r;
+				vp = getViewSpacePoint(s0, e0, viewSlopeR);
+				if (vp[1] > 0)
+					return NULL;
+				//s 內插到 view space邊
+				s0[0] = vp[0];
+				s0[2] = vp[1];
+				delete[] vp;
+			}
+			else if ((1.0 / slopeFromCameraE >= 1.0 / viewSlopeR) && (1.0 / viewSlopeR >= 1.0 / slopeFromCameraS))
+			{
+				float* vp = new float[2];
+				float x = r;
+				vp = getViewSpacePoint(s0, e0, viewSlopeR);
+				if (vp[1] > 0)
+					return NULL;
+				//s 內插到 view space邊
+				s0[0] = vp[0];
+				s0[2] = vp[1];
+				delete[] vp;
+			}
+
+			if ((1.0 / slopeFromCameraE <= 1.0 / viewSlopeL) && (1.0 / viewSlopeL <= 1.0 / slopeFromCameraS))
+			{
+				float* vp = new float[2];
+				float x = r;
+				vp = getViewSpacePoint(s0, e0, viewSlopeL);
+				if (vp[1] > 0)
+					return NULL;
+				//s 內插到 view space邊
+				s0[0] = vp[0];
+				s0[2] = vp[1];
+				delete[] vp;
+			}
+			else if ((1.0 / slopeFromCameraE >= 1.0 / viewSlopeL) && (1.0 / viewSlopeL >= 1.0 / slopeFromCameraS))
+			{
+				float* vp = new float[2];
+				float x = r;
+				vp = getViewSpacePoint(s0, e0, viewSlopeL);
+				if (vp[1] > 0)
+					return NULL;
+				//s 內插到 view space邊
+				s0[0] = vp[0];
+				s0[2] = vp[1];
+				delete[] vp;
+			}
+		}
+		//float slopeFromCameraS = (s0[2] / s0[0]);
+		//float slopeFromCameraE = (e0[2] / e0[1]);
+
+		//if ((slopeFromCameraE <= viewSlopeR) && (viewSlopeR <= slopeFromCameraS))
+		//{
+		//	float* vp = new float[2];
+		//	float x = r;
+		//	vp = getViewSpacePoint(s0, e0, viewSlopeR);
+		//	if (vp[1] > 0)
+		//		return NULL;
+		//	//s 內插到 view space邊
+		//	e0[0] = vp[0];
+		//	e0[2] = vp[1];
+		//	delete[] vp;
+		//}
+		//else if ((slopeFromCameraE >= viewSlopeR) && (viewSlopeR >= slopeFromCameraS))
+		//{
+		//	float* vp = new float[2];
+		//	float x = r;
+		//	vp = getViewSpacePoint(s0, e0, viewSlopeR);
+		//	if (vp[1] > 0)
+		//		return NULL;
+		//	//s 內插到 view space邊
+		//	s0[0] = vp[0];
+		//	s0[2] = vp[1];
+		//	delete[] vp;
+		//}
+
+		//if ((slopeFromCameraE <= viewSlopeL) && (viewSlopeL <= slopeFromCameraS))
+		//{
+		//	float* vp = new float[2];
+		//	float x = r;
+		//	vp = getViewSpacePoint(s0, e0, viewSlopeL);
+		//	if (vp[1] > 0)
+		//		return NULL;
+		//	//s 內插到 view space邊
+		//	e0[0] = vp[0];
+		//	e0[2] = vp[1];
+		//	delete[] vp;
+		//}
+		//else if ((slopeFromCameraE >= viewSlopeL) && (viewSlopeL >= slopeFromCameraS))
+		//{
+		//	float* vp = new float[2];
+		//	float x = r;
+		//	vp = getViewSpacePoint(s0, e0, viewSlopeL);
+		//	if (vp[1] > 0)
+		//		return NULL;
+		//	//s 內插到 view space邊
+		//	s0[0] = vp[0];
+		//	s0[2] = vp[1];
+		//	delete[] vp;
+		//}
 	}
 
 	//一點在相機後 一點在相機前
@@ -1055,13 +1247,15 @@ Draw_View(const float focal_dist, float aspect)
 								  0, n / t, 0, 0,
 								  0, 0, (f + n) / (n - f), -2 * f * n / (f - n),
 								  0, 0, -1, 0 };
+
 	std::vector<Cell*> nextCells;
 	std::set<int> alreadyHandleCellIndexs;
-	std::map<int, float*> cellViewSlope;
 	//給view兩個切入點座標
+	std::map<int, float*> cellViewSlope;
+
 	nextCells.push_back(view_cell);
-	float viewSlope[2] = { n / r, -n / r };
-	cellViewSlope[view_cell->index] = viewSlope;
+	float cameraSlope[2] = { n / r, -n / r };
+	cellViewSlope[view_cell->index] = cameraSlope;
 
 	std::vector<float**> printBuffer;
 
@@ -1070,6 +1264,7 @@ Draw_View(const float focal_dist, float aspect)
 		Cell* nowCell = nextCells[0];
 		nextCells.erase(nextCells.begin());
 		alreadyHandleCellIndexs.insert(nowCell->index);
+
 		for (int i = 0; i < 4; i++)
 		{
 			float edge_start[2] = {
@@ -1097,8 +1292,8 @@ Draw_View(const float focal_dist, float aspect)
 					{
 						1.0 / cellViewSlope[nowCell->index][0],
 						1.0 / cellViewSlope[nowCell->index][1],
-						1.0 / (drawWall[0][1] / drawWall[0][0]),
-						1.0 / (drawWall[1][1] / drawWall[1][0]),
+						-1.0 / (drawWall[0][1] / drawWall[0][0]),
+						-1.0 / (drawWall[1][1] / drawWall[1][0]),
 					};
 
 					if (
@@ -1118,7 +1313,7 @@ Draw_View(const float focal_dist, float aspect)
 							{
 								nextCells.push_back(nowCell->edges[i]->Neighbor(nowCell));
 
-								float newSlope[2] = { 1.0 / slopeSort[0] , 1.0 / slopeSort[3] };
+								float newSlope[2] = { 1.0 / slopeSort[1] , 1.0 / slopeSort[2] };
 								cellViewSlope[nowCell->edges[i]->Neighbor(nowCell)->index] = newSlope;
 							}
 						}
