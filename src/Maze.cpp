@@ -688,23 +688,31 @@ float** Maze::ADrawWall(const float start[2], const float end[2], const float co
 
 		if (sInView == false && eInView == false)
 		{
-			if (((e0[0] < 0 && s0[0] < 0) || (e0[0] > 0 && s0[0] > 0)))
-				return NULL;
-			float* vp = new float[2];
-			vp = getViewSpacePoint(s0, e0, viewSlopeR);
-			if (vp[1] > 0)
-				return NULL;
-			//s 內插到 view space邊
-			e0[0] = vp[0];
-			e0[2] = vp[1];
+			if (
+				((1.0 / slopeSort[2] <= 1.0 / slopeSort[0]) && (1.0 / slopeSort[0] <= 1.0 / slopeSort[3])) ||
+				((1.0 / slopeSort[2] <= 1.0 / slopeSort[1]) && (1.0 / slopeSort[1] <= 1.0 / slopeSort[3])) ||
+				((1.0 / slopeSort[2] >= 1.0 / slopeSort[0]) && (1.0 / slopeSort[0] >= 1.0 / slopeSort[3])) ||
+				((1.0 / slopeSort[2] >= 1.0 / slopeSort[1]) && (1.0 / slopeSort[1] >= 1.0 / slopeSort[3]))
+				)
+			{
+				float* vp = new float[2];
+				vp = getViewSpacePoint(s0, e0, viewSlopeR);
+				if (vp[1] > 0)
+					return NULL;
+				//s 內插到 view space邊
+				e0[0] = vp[0];
+				e0[2] = vp[1];
 
-			vp = getViewSpacePoint(s0, e0, viewSlopeL);
-			if (vp[1] > 0)
+				vp = getViewSpacePoint(s0, e0, viewSlopeL);
+				if (vp[1] > 0)
+					return NULL;
+				//s 內插到 view space邊
+				s0[0] = vp[0];
+				s0[2] = vp[1];
+				delete[] vp;
+			}
+			else
 				return NULL;
-			//s 內插到 view space邊
-			s0[0] = vp[0];
-			s0[2] = vp[1];
-			delete[] vp;
 		}
 		else if (sInView == true && eInView == false)
 		{
@@ -805,9 +813,8 @@ float** Maze::ADrawWall(const float start[2], const float end[2], const float co
 				return NULL;
 		}
 	}
-
 	//一點在相機後 一點在相機前
-	if (s0[2] < -n && e0[2] > -n)
+	else if (s0[2] < -n && e0[2] > -n)
 	{
 		//是否看到的在相機前的點
 		if (abs(s0[0]) > abs(s0[2] * abs(tan(To_Radians(this->viewer_fov / 2)))))	//看不到
