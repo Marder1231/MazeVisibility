@@ -672,15 +672,15 @@ float** Maze::ADrawWall(const float start[2], const float end[2], const float co
 		bool eInView = false;
 
 		if (
-			(( (1.0 / slopeSort[0] - 1.0 / slopeSort[2]) <= 0.00001 ) && ( (1.0 / slopeSort[2] - 1.0 / slopeSort[1] <= 0.00001))) ||
-			(((1.0 / slopeSort[0] - 1.0 / slopeSort[2]) >= -0.00001) && ((1.0 / slopeSort[2] - 1.0 / slopeSort[1] >= -0.00001)))
+			(( (1.0 / slopeSort[0] <= 1.0 / slopeSort[2])  ) && ( (1.0 / slopeSort[2] <= 1.0 / slopeSort[1] ))) ||
+			(((1.0 / slopeSort[0] >= 1.0 / slopeSort[2]) ) && ((1.0 / slopeSort[2] >= 1.0 / slopeSort[1] )))
 			)
 		{
 			sInView = true;
 		}
 		if (
-			(((1.0 / slopeSort[0] - 1.0 / slopeSort[3] <= 0.00001)) && ((1.0 / slopeSort[3] - 1.0 / slopeSort[1] <= 0.00001))) ||
-			(((1.0 / slopeSort[0] - 1.0 / slopeSort[3] >= -0.00001)) && ((1.0 / slopeSort[3] - 1.0 / slopeSort[1] >= -0.00001)))
+			(((1.0 / slopeSort[0] <= 1.0 / slopeSort[3] )) && ((1.0 / slopeSort[3] <= 1.0 / slopeSort[1] ))) ||
+			(((1.0 / slopeSort[0] >= 1.0 / slopeSort[3] )) && ((1.0 / slopeSort[3] >= 1.0 / slopeSort[1] )))
 			)
 		{
 			eInView = true;

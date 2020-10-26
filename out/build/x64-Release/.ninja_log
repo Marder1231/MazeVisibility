@@ -18,3 +18,8 @@
 2473	3674	625229579	MazeVisibility.exe	480908c7e4a7cf51
 1	1862	625231494	CMakeFiles/MazeVisibility.dir/src/Maze.cpp.obj	beaed178c441a258
 1868	2521	625231495	MazeVisibility.exe	480908c7e4a7cf51
+380	2451	625426890	CMakeFiles/MazeLib.dir/src/Cell.cpp.obj	7f712e9897cdc4db
+235	2464	625426890	CMakeFiles/MazeVisibility.dir/src/MazeWindow.cpp.obj	a72b34f59072064a
+2456	3070	625426890	MazeLib.lib	f1209f7877c9a521
+1	4977	625426892	CMakeFiles/MazeVisibility.dir/src/Maze.cpp.obj	beaed178c441a258
+4989	6405	625426894	MazeVisibility.exe	480908c7e4a7cf51
